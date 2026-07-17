@@ -1,0 +1,12 @@
+# Stock Bot 相依套件
+# 使用最新版本以確保與 Python 3.12+ 相容
+python-telegram-bot>=21.1
+python-dotenv==1.0.0
+
+# 股市數據相關套件
+yfinance>=0.2.32          # Yahoo Finance API - 獲取股票數據
+requests>=2.31.0          # HTTP 請求庫
+pandas>=2.1.0             # 數據處理
+
+# 可選：用於增強功能
+aiohttp>=3.9.0            # 異步 HTTP 請求
