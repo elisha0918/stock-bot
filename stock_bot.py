@@ -7,8 +7,10 @@ Stock Market Sentiment Bot
 
 import os
 import logging
+import threading
 import requests
 from datetime import datetime
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import (
@@ -276,8 +278,32 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
     logger.error(msg="發生例外:", exc_info=context.error)
 
 
+class _HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+    def log_message(self, format, *args):
+        pass  # 不印出健康檢查的 request log，避免洗版
+
+
+def start_health_check_server() -> None:
+    """
+    Render 的 Web Service 要求綁定 $PORT 並回應健康檢查，
+    否則部署會判定逾時失敗。這裡開一個最小的 HTTP server 應付檢查，
+    真正的 Bot 邏輯仍透過 Telegram polling 運作。
+    """
+    port = int(os.getenv('PORT', 10000))
+    server = HTTPServer(('0.0.0.0', port), _HealthCheckHandler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    logger.info(f"健康檢查 HTTP server 已啟動於 port {port}")
+
+
 def main() -> None:
     """啟動 Stock Bot"""
+    start_health_check_server()
+
     # 建立 Application
     application = Application.builder().token(BOT_TOKEN).build()
 
